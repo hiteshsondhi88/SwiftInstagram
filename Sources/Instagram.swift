@@ -87,6 +87,28 @@ public class Instagram {
         controller.show(vc, sender: nil)
     }
 
+    public func login(from controller: UIViewController,
+                      withScopes scopes: [InstagramScope] = [.basic],
+                      success: EmptySuccessHandler?,
+                      failure: FailureHandler?) {
+
+        guard client != nil else { failure?(InstagramError.missingClientIdOrRedirectURI); return }
+
+        let authURL = buildAuthURL(scopes: scopes)
+
+        let vc = InstagramLoginViewController(authURL: authURL, success: { accessToken in
+            guard self.storeAccessToken(accessToken) else {
+                failure?(InstagramError.keychainError(code: self.keychain.lastResultCode))
+                return
+            }
+
+            controller.dismiss(animated: true, completion: nil)
+            success?()
+        }, failure: failure)
+
+        controller.present(UINavigationController(rootViewController: vc), animated: true, completion: nil)
+    }
+
     private func buildAuthURL(scopes: [InstagramScope]) -> URL {
         var components = URLComponents(string: API.authURL)!
 
